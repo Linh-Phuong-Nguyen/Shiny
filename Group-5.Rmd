@@ -1,0 +1,1227 @@
+---
+title: |
+  
+  <p style="text-align: center;color: #008B8B; font-weight: bold;">MONTHLY INCOME IN A COMPANY</p>
+runtime: shiny
+output:
+  html_document:
+    toc: true
+    toc_float:
+      collapsed: false
+      smooth_scroll: true
+    toc_depth: 3
+    fig_caption: true
+    css: styles.css
+    df_print: kable
+
+---
+
+<p style='text-align: right;'><strong><em>Instructor: Tan Do Duc</em></strong></p>
+***Course: OSTA***\
+***Members of group 5:***\
+
+| | Name | ID Student |
+|:----------|:----------|:----------:|
+|1 | Phan Mai Dinh | 10622009 |
+|2 | Nguyen Linh Phuong | 10322020 |
+|3 | Bui Huynh Truc Anh | 10622005 |
+|4 | Ha Kieu Anh | 10622002|
+|5 | Nguyen Minh Quoc | 10322022 |
+|6 | Tran Anh Minh   | 10222041|
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+```
+
+
+
+
+```{r library and data set, include=FALSE}
+library(tidyverse)
+library(ggplot2)
+library(janitor)
+library(gridExtra)
+library(distributions3)
+library(stats)
+library(DT)
+library(shiny)
+library(shinydashboard)
+Data <- read.csv("D:\\Download\\archive\\HR_Analytics.csv")
+data <- Data
+``` 
+
+# **I. INTRODUCTION**
+
+Human Resource (HR) analytics plays a crucial role in gaining insights into various aspects of human resources within an organization. The analysis of HR data provides valuable information that can lead to informed decision-making and strategic planning in areas such as talent management, employee engagement, and organizational effectiveness. In line with this, our team has chosen to work with a comprehensive HR analytics data set to devel into the complexities of managing human capital within a company.\
+
+Analyzing this data set is of paramount importance as it allows us to understand the drivers of employee engagement, retention, and productivity. By delving into the various features within the dataset, such as age, education, and job involvement, we can identify patterns and correlations that shed light on the factors impacting employee performance and satisfaction. Additionally, the data set equips HR professionals with the necessary information to make data-driven decisions related to talent management, compensation, and career development within the company.\
+
+The features included in the data set offer a comprehensive view of the factors that can significantly affect various aspects of human resources management. For instance, the employee's age can provide insights into generational differences and their impact on job satisfaction and performance. The department and job level variables offer valuable data for understanding the distribution of talent and skills across different organizational levels. Furthermore, the monthly income and education level columns provide essential information for evaluating compensation structures and potential correlations between educational attainment and job performance.\
+
+By leveraging the wealth of information embedded in this data set, HR professionals can gain a holistic understanding of the workforce, enabling them to optimize talent management strategies, address potential issues related to employee satisfaction and performance, and align HR initiatives with the company's overall strategic objectives.\
+
+In summary, the HR analytics data set serves as a valuable resource for gaining insights into critical aspects of human resources management within an organization. Through comprehensive analysis, the data set promises to unveil crucial patterns and correlations that can inform strategic decision-making, ultimately contributing to the enhancement of organizational effectiveness and employee well-being.\  
+
+
+
+
+
+# **II. DATA EXPLORATION**
+## **1. The sample**
+
+The data set was collected from [www.Kaggle.com](https://www.kaggle.com/datasets/saadharoon27/hr-analytics-dataset?fbclid=IwAR2b-NN4HEDDZGLykcMMSJ5HP26yszD6-PtHgtSHRTO_FgqX3PftW_4OUEM) and was adjusted afterward to be more suitable. The data set was created as a project to focus on HR analytics and aims to provide insights about various aspects of human resources within an organization. This data contains 1480 data points, equivalent to each of the employees from the organization. Originally, the data set contained 37 variables, however, 10 of them are chosen to be the key points of this report which include employee ID, age, department, education, gender, job involvement, job level, monthly income, performance rating and satisfaction.
+
+First, our team observed some charts to identify next statistical steps.\ 
+
+ 
+```{r bar chart number and income, echo=FALSE, fig.message=FALSE, fig.show='hold', warning=FALSE, out.width='100%'}
+# Sample data
+# Sample data
+Total_income <- tribble(
+  ~Department, ~Income,
+  "Human Resources", 419234,
+  "Sales", 3135032,
+  "Research & Development", 6073113
+)
+
+# UI for the Shiny App
+ui <- dashboardPage(
+  dashboardHeader(title = "Department Analysis"),
+  dashboardSidebar(
+    selectInput("selected_department", "Select Department", 
+                choices = c("All", unique(Total_income$Department)),
+                selected = "All",
+                multiple = TRUE)
+  ),
+  dashboardBody(
+    fluidRow(
+      box(
+        title = "Total Income Per Month",
+        plotOutput("total_income_plot")
+      ),
+      box(
+        title = "Number of Employees",
+        plotOutput("employee_count_plot")
+      )
+    )
+  )
+)
+
+# Server for the Shiny App
+server <- function(input, output) {
+  
+  # Reactive function to filter data based on selected departments
+  selected_data <- reactive({
+    if ("All" %in% input$selected_department) {
+      Total_income
+    } else {
+      filter(Total_income, Department %in% input$selected_department)
+    }
+  })
+    selected_data_1 <- reactive({
+    if ("All" %in% input$selected_department) {
+      Data
+    } else {
+      filter(Data, Department %in% input$selected_department)
+    }
+  })
+  # Plot for Total Income
+  output$total_income_plot <- renderPlot({
+    ggplot(data = selected_data(), aes(x = Department, y = Income/10000, fill = Department)) +
+      geom_bar(stat = "identity") +
+      ggtitle("Total Income Per Month") +
+      xlab("Department") +
+      ylab("Total Monthly Income (In Ten Thousand)") +
+      scale_fill_manual(values = c("Human Resources" = "#E389B9", "Research & Development" = "#746AB0", "Sales" = "#6d9eeb")) +
+      theme(legend.position = "none") +
+      theme(plot.title = element_text(hjust = 0.5, size = 15))
+  })
+  
+  # Plot for Number of Employees
+  output$employee_count_plot <- renderPlot({
+    ggplot(data = selected_data_1(), aes(x = Department, fill = Department)) +
+      geom_bar(stat = "count") +
+      ggtitle("Number of Employees") +
+      xlab("Department") +
+      ylab("Number of Employees") +
+      scale_fill_manual(values = c("Human Resources" = "#E389B9", "Research & Development" = "#746AB0", "Sales" = "#6d9eeb")) +
+      theme(legend.position = "none") +
+      theme(plot.title = element_text(hjust = 0.5, size = 15))
+  })
+}
+
+# Run the Shiny App
+shinyApp(ui, server)
+
+
+```
+\
+There is a significant difference between the 3 departments: Human Resources is the lowest with under 500 000, the second position is Sales with over 3 000 000 and the highest with over 6 000 000 is the Research & Development department. However, this difference in the total income per month in each department is because of the difference in the number of employees in each department. The monthly total income is nearly proportional to the number of employees in each department.\
+
+```{r boxplot, echo=FALSE, fig.align='center', message=FALSE, warning=FALSE, out.width='50%'}
+hypothesis1 <- data.frame(Department=Data$Department,
+                          MonthlyIncome=Data$MonthlyIncome)
+#Draw the boxplot
+ggplot(hypothesis1, mapping= aes(x= Department, y=MonthlyIncome , fill=Department))+
+    geom_boxplot()+
+    labs(x=" Department", y=" Monthly income", 
+         title="Figure 3: Distribution of monthly income in each department")+
+    theme(plot.title = element_text(hjust = 0.5, size= 15),
+          legend.position = "none")+scale_fill_manual(values = c("#E389B9", "#746AB0", "#6d9eeb"))
+
+```
+As we can see from the boxplot, we have the prove to believe that the average income in the 3 departments are nearly the same. We will test this statement in the further analysis section.
+\
+```{r gender, echo=FALSE, fig.message=FALSE, fig.show='hold', warning=FALSE, out.width='50%'}
+gd = data %>% count(Gender)
+C <-barplot(gd$n,names.arg = gd$Gender,col = "skyblue",main = "Figure 4: The number of Employees for each Gender",xlab = "Gender",ylab = "Number of employees")
+
+table_data <- table(data$Gender, data$Satisfied_in_job)
+
+table_df <- as.data.frame(table_data)
+
+colnames(table_df) <- c("Gender", "Satisfaction", "Count")
+
+barplot(
+  height = t(matrix(table_df$Count, nrow = nlevels(factor(data$Gender)), byrow = TRUE)),
+  beside = TRUE,
+  col = c("lightblue", "salmon"),
+  legend.text = c("Satisfied", "Not Satisfied"),
+  args.legend = list(
+    title = "Satisfaction",
+    cex = 0.9,
+    # Adjust the inset to move the legend to the bottom
+    x = "top"
+   
+  ),
+  names.arg = levels(factor(data$Gender)),
+  main = "Figure 5: Satisfaction in Job by Gender",
+  xlab = "Gender",
+  ylab = "Count"
+)
+```
+\
+According to the two bar charts above, we can infer that job satisfaction by gender is nearly proportional to the quantity of employees in each gender. Thus, it can be observed that job satisfaction is not dependent on the gender of employees.\ 
+
+## **2. Data description**
+The full version of the data set is displayed at the “Appendix" section.\
+
+The relevance of this data set to HR analytics is substantial, as the ability to interpret and analyze employee-related trends is crucial for effective human resource management. By leveraging this data set, organizations can identify patterns and correlations that may contribute to attrition rates, allowing for the development of targeted strategies to enhance employee retention and satisfaction.
+
+The data consist of 11 variables:\
+
+**EmpID:** Employee ID.\
+
+**Age:** Age of the employee.\
+
+**Department:** Department in which the employee works.\
+
+**Education:** Level of education attained by the employee. There are 5 levels of education and the higher level, the higher education.\
+
+**Gender:** Gender of the employee.\
+
+**JobInvolvement:** Employee's level of job involvement. There are 4 levels of job involvement and the higher level, the more contribute work.\
+
+**JobLevel:** Level of the employee's job position. There are 5 levels of job and the higher level, the higher position.\
+
+**MonthlyIncome:** Monthly income of the employee. In this data set, we do not have the index of monthly income. However, because of this company is in United Kingdom, we assume that the income is in pounds \
+
+**PerformanceRating:** Performance rating of the employee. There are 2 rating which is 3 and 4. The higher rating, the more effective performance.\
+
+**JobSatisfaction:**  Employee's satisfaction level with their job. There are 4 levels of satisfaction and the higher level, the more satisfaction in job.\
+
+**Satisfied_in_job:** From 10th variable from the data set, we add a column to data set which show whether the employee satisfied in job or not. If employee's satisfaction level is larger than or equal to 3, we consider this employee Satisfies in the job. 
+
+## **3. Data analysis**
+The purpose of this part is to visualize the data to gain insights that will help us realize what factors affect the monthly income of employee in this company.
+
+<span style="color:#4169E1;">Job level:</span>
+
+```{r bar chart job level and monthly icome, echo=FALSE, fig.align="center", fig.message=FALSE, message=FALSE, warning=FALSE}
+income_and_role <- Data %>% group_by(JobLevel) %>% 
+  summarise(total_income = sum(MonthlyIncome))
+ a <-Data %>%count(JobLevel)
+ joined_data <- left_join(income_and_role, a,)
+ joined_data$average=joined_data$total_income/joined_data$n
+ggplot(joined_data , mapping=aes(y= average, x=JobLevel, ))+
+  geom_bar( stat = "identity", fill="#4169E1" )+
+  theme(axis.text.x = element_text(angle = 0))+
+   labs(x= "Job Level", y= "Average monthly income", title="Figure 6: Monthly income by job level")
+```
+
+Each job level corresponds to a specific monthly income, with higher job levels associated with greater monthly earnings. Notably, job level 5 stands out as the highest, yielding an impressive monthly income of around $19,000. It can be seen clearly that job level have a effect on monthly income.
+
+```{r summary  the joblevel, include=FALSE}
+JobLeve1 <-filter(Data, JobLevel == "1")
+J1<- JobLeve1 %>% group_by(Department) %>% 
+  summarise(total_income = sum(MonthlyIncome))
+ a <-JobLeve1 %>%count(Department)
+ joined_data_j1 <- left_join(J1, a)
+ joined_data_j1$average=joined_data_j1$total_income/joined_data_j1$n
+ joined_data_j1$JobLevel=1  
+ print(joined_data_j1)
+
+ JobLeve2 <-filter(Data, JobLevel == "2")
+J2<- JobLeve2 %>% group_by(Department) %>% 
+  summarise(total_income = sum(MonthlyIncome))
+ a <-JobLeve2 %>%count(Department)
+ joined_data_j2 <- left_join(J2, a)
+ joined_data_j2$average=joined_data_j2$total_income/joined_data_j2$n
+ joined_data_j2$JobLevel=2  
+ print(joined_data_j2)
+
+ JobLeve3 <-filter(Data, JobLevel == "3")
+J3<- JobLeve3 %>% group_by(Department) %>% 
+  summarise(total_income = sum(MonthlyIncome))
+ a <-JobLeve3 %>%count(Department)
+ joined_data_j3 <- left_join(J3, a)
+ joined_data_j3$average=joined_data_j3$total_income/joined_data_j3$n
+ joined_data_j3$JobLevel=3 
+ print(joined_data_j3)
+
+JobLeve4 <-filter(Data, JobLevel == "4")
+J4<- JobLeve4 %>% group_by(Department) %>% 
+  summarise(total_income = sum(MonthlyIncome))
+ a <-JobLeve4 %>%count(Department)
+ joined_data_j4 <- left_join(J4, a)
+ joined_data_j4$average=joined_data_j4$total_income/joined_data_j4$n
+ joined_data_j4$JobLevel=4
+ print(joined_data_j4)
+
+JobLeve5 <-filter(Data, JobLevel == "5")
+J5<- JobLeve5 %>% group_by(Department) %>% 
+  summarise(total_income = sum(MonthlyIncome))
+ a <-JobLeve5 %>%count(Department)
+ joined_data_j5 <- left_join(J5, a)
+ joined_data_j5$average=joined_data_j5$total_income/joined_data_j5$n
+ joined_data_j5$JobLevel=5
+ print(joined_data_j5)
+
+combined_data <- rbind(joined_data_j1,joined_data_j2,joined_data_j3,joined_data_j4,  joined_data_j5)
+
+
+```
+```{r bar chart job level and department, echo=FALSE, fig.align="center", message=FALSE, warning=FALSE}
+ggplot(data =combined_data ) +
+  geom_bar(mapping = aes(x = JobLevel, fill = Department, y=average), position = "dodge", stat = "identity")+scale_fill_manual(values = c("Human Resources" = "#E389B9", "Research & Development" = "#746AB0", "Sales" = "#6d9eeb"))+
+  labs(x= "Job Level", y= "Average monthly income", title="Figure 7: Monthly income by job level and department")
+
+ 
+```
+
+In figure 7, there is a significant difference in monthly income between each Job Level, but in the average monthly incomes between 3 departments in a Job Level are nearly the same.
+
+
+<span style="color: 	#4169E1;">Education level:</span>
+
+```{r bar chart education level and monthly income, echo=FALSE, fig.align="center", message=FALSE, warning=FALSE}
+income_and_role <- Data %>% group_by(Education) %>% 
+  summarise(total_income = sum(MonthlyIncome))
+ a <-Data %>%count(Education)
+ joined_data <- left_join(income_and_role, a,)
+ joined_data$average=joined_data$total_income/joined_data$n
+ggplot(joined_data , mapping=aes(y= average, x=Education, ))+
+  geom_bar( stat = "identity", fill="#4169E1" )+
+  theme(axis.text.x = element_text(angle = 0))+
+   labs(x= "Education Level", y= "Average monthly income", title="Figure 8: Monthly income by Education level")
+```
+
+The majority of the highest average monthly incomes were observed in Education Level 5, exceeding 8,000. In contrast, the average monthly incomes across the other four education levels were relatively consistent, ranging between approximately 5,800 and 6,900(Figure 8). At first glance, it appears that Education Level may influence average monthly income.
+
+
+
+```{r summary the education level, include=FALSE}
+JobLeve1 <-filter(Data, Education == "1")
+J1<- JobLeve1 %>% group_by(Department) %>% 
+  summarise(total_income = sum(MonthlyIncome))
+ a <-JobLeve1 %>%count(Department)
+ joined_data_j1 <- left_join(J1, a)
+ joined_data_j1$average=joined_data_j1$total_income/joined_data_j1$n
+ joined_data_j1$Education=1  
+ print(joined_data_j1)
+
+ JobLeve2 <-filter(Data, Education == "2")
+J2<- JobLeve2 %>% group_by(Department) %>% 
+  summarise(total_income = sum(MonthlyIncome))
+ a <-JobLeve2 %>%count(Department)
+ joined_data_j2 <- left_join(J2, a)
+ joined_data_j2$average=joined_data_j2$total_income/joined_data_j2$n
+ joined_data_j2$Education=2  
+ print(joined_data_j2)
+
+ JobLeve3 <-filter(Data, Education == "3")
+J3<- JobLeve3 %>% group_by(Department) %>% 
+  summarise(total_income = sum(MonthlyIncome))
+ a <-JobLeve3 %>%count(Department)
+ joined_data_j3 <- left_join(J3, a)
+ joined_data_j3$average=joined_data_j3$total_income/joined_data_j3$n
+ joined_data_j3$Education=3 
+ print(joined_data_j3)
+
+JobLeve4 <-filter(Data, Education == "4")
+J4<- JobLeve4 %>% group_by(Department) %>% 
+  summarise(total_income = sum(MonthlyIncome))
+ a <-JobLeve4 %>%count(Department)
+ joined_data_j4 <- left_join(J4, a)
+ joined_data_j4$average=joined_data_j4$total_income/joined_data_j4$n
+ joined_data_j4$Education=4
+ print(joined_data_j4)
+
+JobLeve5 <-filter(Data, Education == "5")
+J5<- JobLeve5 %>% group_by(Department) %>% 
+  summarise(total_income = sum(MonthlyIncome))
+ a <-JobLeve5 %>%count(Department)
+ joined_data_j5 <- left_join(J5, a)
+ joined_data_j5$average=joined_data_j5$total_income/joined_data_j5$n
+ joined_data_j5$Education=5
+ print(joined_data_j5)
+
+combined_data <- rbind(joined_data_j1,joined_data_j2,joined_data_j3,joined_data_j4,  joined_data_j5)
+
+
+```
+```{r bar chart education level and department, echo=FALSE, fig.align="center", message=FALSE, warning=FALSE}
+ggplot(data =combined_data ) +
+  geom_bar(mapping = aes(x = Education, fill = Department, y=average), position = "dodge", stat = "identity")+scale_fill_manual(values = c("Human Resources" = "#E389B9", "Research & Development" = "#746AB0", "Sales" = "#6d9eeb"))+
+  labs(x= "Education Level", y= "Average monthly income", title="Figure 9: Monthly income by education level and department")+theme(plot.title = element_text(hjust = 0.5, size= 15))
+ 
+```
+
+
+Examining figure 7 and figure 9 reveals a discernible trend: as the job or education level increases, the average monthly income also rises across three distinct departments—Human Resources, Research and Development, and Sales. Noteworthy instances include the highest average monthly income of approximately around 10,000 within Sales at Education Level 4. Our team will test if there is any difference between three departments at a Education Level in the further analysis section.
+
+<span style="color: #6495ED;">Performance Rating:</span>
+```{r dataandDate, data=Data, include=FALSE}
+data <-Data
+```
+
+```{r summary the performtion, include=FALSE}
+
+Perf1 <- filter(Data, PerformanceRating == "3")
+P1<- Perf1 %>% group_by(Department) %>%
+summarise(total_income = sum(MonthlyIncome))
+a <- Perf1 %>%count(Department)
+joined_data_Perf1 <- left_join(P1, a)
+joined_data_Perf1$average=joined_data_Perf1$total_income/joined_data_Perf1$n
+joined_data_Perf1$PerformanceRating=3
+print(joined_data_Perf1)
+
+
+
+Perf2 <- filter(Data, PerformanceRating == "4")
+P2<- Perf2 %>% group_by(Department) %>%
+summarise(total_income = sum(MonthlyIncome))
+a <- Perf2 %>%count(Department)
+joined_data_Perf2 <- left_join(P2, a)
+joined_data_Perf2$average=joined_data_Perf2$total_income/joined_data_Perf2$n
+joined_data_Perf2$PerformanceRating=4
+
+
+combined_data<-rbind(joined_data_Perf1,joined_data_Perf2)
+
+print(combined_data)
+
+```
+```{r perf and income, echo=FALSE, fig.align='center', message=FALSE, warning=FALSE}
+ggplot(data =combined_data ) + geom_bar(mapping = aes(x = PerformanceRating, fill = Department, y=average), position = "dodge",stat = "identity") + labs(title = "Figure 10: Average monthly income by Performance rating and Departments", x = "Performance Rating", y = "Average Monthly Income") +scale_fill_manual(values = c("Human Resources" = "#E389B9", "Research & Development" = "#746AB0", "Sales" = "#6d9eeb"))+scale_x_continuous(breaks= seq(from=3, to=4, by=1))+theme(plot.title = element_text(hjust = 0,size= 12))+
+  theme_minimal()
+
+
+```
+Generally, the average monthly income between the two performance ratings in the 3 departments: Human Resources, Research & Development, and Sales are considerably the same.
+
+<span style="color:	#4169E1;">Job Involvement:</span>
+
+```{r summary jobI, message=FALSE, warning=FALSE, include=FALSE}
+
+JobI1 <- filter(data, JobInvolvement == "1")
+JI1<- JobI1 %>% group_by(Department) %>%
+summarise(total_income = sum(MonthlyIncome))
+a <- JobI1 %>%count(Department)
+joined_data_ji1 <- left_join(JI1, a)
+joined_data_ji1$average=joined_data_ji1$total_income/joined_data_ji1$n
+joined_data_ji1$JobInvolvement=1
+print(joined_data_ji1)
+
+JobI2 <- filter(data, JobInvolvement == "2")
+JI2<- JobI2 %>% group_by(Department) %>%
+ summarise(total_income = sum(MonthlyIncome))
+a <- JobI2 %>%count(Department)
+joined_data_ji2 <- left_join(JI2, a)
+joined_data_ji2$average=joined_data_ji2$total_income/joined_data_ji2$n
+joined_data_ji2$JobInvolvement=2
+print(joined_data_ji2)
+
+JobI3 <- filter(data, JobInvolvement == "3")
+JI3<- JobI3 %>% group_by(Department) %>%
+summarise(total_income = sum(MonthlyIncome))
+a <- JobI3 %>%count(Department)
+joined_data_ji3 <- left_join(JI3, a)
+joined_data_ji3$average=joined_data_ji3$total_income/joined_data_ji3$n
+joined_data_ji3$JobInvolvement=3
+print(joined_data_ji3)
+
+JobI4 <- filter(data, JobInvolvement == "4")
+JI4<- JobI4 %>% group_by(Department) %>%
+ summarise(total_income = sum(MonthlyIncome))
+a <- JobI4 %>%count(Department)
+joined_data_ji4 <- left_join(JI4, a)
+joined_data_ji4$average=joined_data_ji4$total_income/joined_data_ji4$n
+joined_data_ji4$JobInvolvement=4
+print(joined_data_ji4)
+
+combined_data2 <- rbind(joined_data_ji1,joined_data_ji2,joined_data_ji3,joined_data_ji4)
+print(combined_data2)
+```
+
+```{r bar chart jobI, echo=FALSE, fig.align='center', message=FALSE, warning=FALSE}
+ggplot(data =combined_data2 ) + geom_bar(mapping = aes(x = JobInvolvement, fill = Department, y=average), position = "dodge",stat = "identity") + labs(title = "Figure 12: Average monthly income by Job Involvement and Departments", x = "Job Involvement", y = "Average Monthly Income") +scale_fill_manual(values = c("Human Resources" = "#71a6d2", "Research & Development" = "#746AB0", "Sales" = "#9addff"))+theme(plot.title = element_text(hjust = 0,size= 12))+ theme_minimal()
+
+```
+Figure 12 verifies that Human Resources, specifically in Job Involvement 4, outperformed all other departments across all four Job Involvement categories. It recorded the highest average monthly income, exceeding 8,000, while the lowest average, approximately 4,800, was observed in Job Involvement 4 within the Research and Development department. Overall, the Research & Development department and Sales department in the all 4 job involvements are nearly the same, only Human Resources department has the most different performance. 
+
+# **III. FURTHER ANALYSIS**
+## **1.Three departments (ANOVA)**
+
+### **1.1 Methods**
+Our team uses the one-factor analysis of variances technique to compare employees' monthly income in three departments. After the test, if the monthly income of employees in three departments are different, we use Tukey multiple comparisons procedure to construct the confidence intervals.
+
+We aim to test whether the average monthly incomes of employees in the three departments are the same. As a result, we develop the following testing hypothesis:
+$$
+H_o: \mu_1 = \mu_2 = \mu_3 \textit{  versus  } H_a: \textit{at least one pair of means are different from each other}
+$$
+The formulas:
+
+<span style="color: #009ACD;">SSTr: Sum of squares for treatments:</span>
+
+$$
+\text{SSTr }= \sum_{i=1}^{k}n_i \overline{x_i}^2-n_T\overline{x}^2
+$$
+$k-1$: the degrees of freedom for the sum of squares for treatments.
+
+$n_T$: the total sample size of the data set.
+
+<span style="color: #009ACD;">SSE: Sum of squares for error:</span>
+
+$$
+\text{SSE }= \sum_{i=1}^{k}\sum_{j=1}^{n_i}x_\textit{ij}^2-\sum_{i=1}^{k}n_i \overline{x_i}^2
+$$
+$n_T-k$: the degrees of freedom for the sum of squares for error.
+
+<span style="color: #009ACD;">SST: Total sum of squares:</span>
+
+$$
+\text{SST }= \text{SSTr }+\text{SSE }=\sum_{i=1}^{k}\sum_{j=1}^{n_i}x_\textit{ij}^2 -n_T\overline{x}^2
+$$
+<span style="color: #009ACD;">MSTr: Mean squares for treatments:</span>
+
+$$
+\text{MSTr }= \frac{\text{SSTr} }{\text{degrees of freedom}}= \frac{\text{SSTr}}{k-1}
+$$
+<span style="color: #009ACD;">MSE: Mean squares error:</span>
+
+$$
+\text{MSE }= \frac{\text{SSE} }{\text{degrees of freedom}}= \frac{\text{SSE}}{n_T - k}
+$$
+<span style="color: #009ACD;">F-statistic</span>
+
+$$
+\textit{F }= \frac{\text{MSTr} }{\text{MSE}} \backsim\textit{F }_{\text{k-1,}n_T-k}
+$$
+<span style="color: #009ACD;">p_value:</span>
+
+$$
+\textit{p_value}= P(X\geq \textit{F })
+$$
+The form of an analysis of variance table:
+
+
+| Source | Degrees of freedom | Sum of squares | Mean squares | F-statistic| p_value |
+|:----------:|:----------:|:----------:|:----------:|:----------:|:----------:|
+| Treatments | $k-1$| SSTr |$\text{MSTr }= \frac{\text{SSTr}}{k-1}$ | $\textit{F }= \frac{\text{MSTr} }{\text{MSE}}$| $P(\textit{F }_{\text{k-1,}n_T-k}\geq \textit{F })$ |
+| Error | $n_T-k$ | SSE | $\text{MSE }=  \frac{\text{SSE}}{n_T - k}$ | 
+| Total | $n_T-1$ | SST | 
+
+### **1.2 Analysis**
+Hypothesis testing at a 5% significance level ($\alpha$ = 0.05):
+
+$$
+H_o: \mu_1 = \mu_2 = \mu_3 \textit{  versus  } H_a: \textit{at least one pair of means are different from each other}\\
+$$
+$\mu_1 : \textit{the mean of employee's monthly income in Research } \& \textit{Development} \\$
+$\mu_2 : \textit{the mean of employee's monthly income in Sales} \\$
+$\mu_3 : \textit{the mean of employee's monthly income in Human Resources} \\$
+
+
+
+
+We use the R to compute calculations. The code is as follows:
+```{r H1 anova table, echo=TRUE, message=FALSE, warning=FALSE}
+# Fit the ANOVA model(the one-factor analysis of variances technique)
+hypothesis1 <- data.frame(Department=Data$Department,
+                          MonthlyIncome=Data$MonthlyIncome)
+model <- aov(MonthlyIncome ~ Department, data = hypothesis1)
+#Construct to table
+summary_table <- summary(model)
+anova_df_1 <- data.frame(
+  Source = rownames(summary_table[[1]]),
+  Degrees_of_freedom = summary_table[[1]][, "Df"],
+  Sum_of_Squares = summary_table[[1]][, "Sum Sq"],
+  Mean_square = summary_table[[1]][, "Mean Sq"],
+  F_statistic= summary_table[[1]][, "F value"],
+  P_Value = summary_table[[1]][, "Pr(>F)"]
+)
+
+knitr::kable(anova_df_1)
+```
+
+From the table, we have:
+
+F-statistic:
+```{r H1 F, echo=FALSE, message=FALSE, warning=FALSE, paged.print=TRUE}
+ anova_df_1[1, 5]
+```
+p_value:
+```{r H1 p, echo=FALSE, message=FALSE, warning=FALSE, paged.print=TRUE}
+ anova_df_1[1, 6]
+```
+Since $\textit{p_value } = 0.03649772 < 0.05$, the null hypothesis is rejected at the 5% significance level. Thus, there is sufficient
+evidence that at least the monthly incomes of one pair department are different.
+
+We additionally perform the Tukey multiple comparison procedure to identify any differences among means values and quantify the extent of those differences. The R code for this procedure is as follows:
+```{r H1 interval}
+
+hsd_results <- TukeyHSD(model,conf.level=.95)
+# Extract results to a data frame
+
+tukey_df <- as.data.frame(hsd_results$Department)
+tukey_df$CI_low <- hsd_results$lower[, "lwr"]
+tukey_df$CI_high <- hsd_results$upper[, "upr"]
+
+# View the data frame
+knitr::kable(tukey_df)
+```
+```{r plot H1, echo=FALSE,results='hide' ,fig.align='right', message=FALSE, warning=FALSE, out.width='100%'}
+
+par(mar = c(5, 19, 4, 0) + 0.1)
+# Assuming hsd_results is a TukeyHSD object
+A <-plot(hsd_results, las =1, col = "blue")+title(sub="Plot 1")
+show(A)
+
+```
+
+The 95% confidence interval for the difference between Research & Development and Human Resources is
+
+$$
+\mu_1 -\mu_3  \in (-1805.73254,1057.447)
+$$
+
+Since the confidence interval contains 0, there is evidence that Research & Development and Human Resources do not have significant difference in monthly incomes with 95% confidence interval.
+
+The 95% confidence interval for the difference between Sales and Human Resources is
+$$
+\mu_2 -\mu_3  \in (-1168.80611,1793.266)
+$$
+Since the confidence interval contains 0, there is evidence that Sales and Human Resources do not have significant difference in monthly incomes with 95% confidence interval. However, according to the plot 1, the average income in Sales is likely grater than in Human Resources.
+
+
+The 95% confidence interval for the difference between Sales and Research & Development is
+$$
+\mu_2 -\mu_1  \in (58.09903,1314.646)
+$$
+Since the confidence interval does not contain 0, it is plausible that  Sales and Research & Development have different monthly incomes with 95% confidence level. Additionally,the employees in Sales department earn more than those in Research & Development
+
+
+
+
+### **1.3 Conclusion**
+
+After using the ANOVA technique, we can conclude that the average income of the 3 departments are not the same and the Tukey multiple comparison procedure showed that the Sales department has the highest average income among all. 
+
+
+## **2. The factors** 
+
+### **2.1 Job Level (ANOVA)** {.tabset .tabset-fade}
+
+In this part, our team will test whether the monthly incomes between job levels are different or not. If they are not the same, we will continued to test the monthly incomes between 3 departments in the same Job Level. 
+
+#### Between job levels
+
+To compare monthly incomes based on job levels we apply the same method as part 1. We want to test whether the means of the monthly income between each job levels are the same.\
+Hence, we formulate the testing hypothesis at the 1% significance level as follows:
+
+
+$$
+H_o: \mu_1 = \mu_2 = \mu_3 = \mu_4 =\mu_5 \textit{  versus  } H_a: \textit{at least one pair of means are different from each other}\\
+$$
+$\mu_1 : \textit{the mean of employee's monthly income of Employees with Job Level 1}\\$ 
+$\mu_2 : \textit{the mean of employee's monthly income of Employees with Job Level 2} \\$ 
+$\mu_3 : \textit{the mean of employee's monthly income of Employees with Job Level 3} \\$
+$\mu_4 : \textit{the mean of employee's monthly income of Employees with Job Level 4 } \\$
+$\mu_5 : \textit{the mean of employee's monthly income of Employees with Job Level 5} \\$
+
+The boxplot distribute the monthly income of each job level are generated:
+
+```{r echo=FALSE, fig.align='center', message=FALSE, warning=FALSE, out.width='50%'}
+# Fit the ANOVA model(the one-factor analysis of variances technique)
+dt = Data
+
+Hypothesis2 <- data.frame(Joblevel = dt$JobLevel, Income = dt$MonthlyIncome)
+
+Hypothesis2$Joblevel <- as.character(Hypothesis2$Joblevel)
+
+#Draw the boxplot
+boxplot(Income ~ Joblevel, data = Hypothesis2,
+        col = "#E389B9", border = "#746AB0",
+        xlab = "Job Level", ylab = "Monthly Income",
+        main = "Distribution of Monthly Income by Job Level")
+
+```
+
+It is cleared that when the job level is higher, the monthly salary increases.\
+
+The code for computation is:
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+# Perform the ANOVA
+dt = Data
+Hypothesis2 <- data.frame(Joblevel = dt$JobLevel, Income = dt$MonthlyIncome)
+Hypothesis2$Joblevel <- as.character(Hypothesis2$Joblevel)
+tryCatch({
+  Model <- aov(Income ~ Joblevel, data = Hypothesis2)
+  # Generate the summary table
+  Summary_table <- summary(Model)
+ 
+}, error = function(e) {
+  print(paste("An error occurred: ", e$message))
+})
+# Convert the summary to a data frame
+Modl_table <- data.frame(Summary_table[[1]])
+colnames(Modl_table) <- c("Degrees_of_freedom", "Sum_of_Squares", 
+                          "Mean_square", "F_statistic", "P_Value")
+knitr::kable(Modl_table)
+```
+
+From the table, we have:
+
+F-statistic:
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=TRUE}
+print(Modl_table[1, 4])
+```
+
+p_value:
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=TRUE}
+print(Modl_table[1,5])
+```
+
+Since $$\textit{p_value } = 0 < 0.01,$$
+
+the null hypothesis is rejected at the 1% significance level. Thus, there is sufficient evidence that at least the monthly incomes of one pair job levels are different.
+
+We additionally perform the Tukey multiple comparison procedure to identify any differences among means values and quantify the extent of those differences. The R code for this procedure is as follows:\
+
+```{r echo=TRUE}
+#Tukey
+hsd_results <- TukeyHSD(Model,conf.level=.99)
+# Extract results to a data frame
+
+tukey_df <- as.data.frame(hsd_results$Joblevel)
+tukey_df$CI_low <- hsd_results$lower[, "lwr"]
+tukey_df$CI_high <- hsd_results$upper[, "upr"]
+
+# View the data frame
+knitr::kable(tukey_df)
+```
+
+The result is showed in this chart:
+
+```{r plot H32, echo=TRUE, fig.align='center', message=FALSE, warning=FALSE, out.width='100%', results='hide'}
+
+#draw 
+
+plot(hsd_results, las =1, col = "blue")+ title(sub="Plot 2.1a")
+```
+
+According to the table and the chart above, since all the confidence intervals do not contain 0, it is plausible that the monthly incomes of 5 job levels are different with 99% confidence level. Additionally, the monthly income is likely to scale with the job level. Thus, the means of employees' monthly income in Job Level 5 is the highest in 5 job levels.
+
+
+#### Department in job level 5
+
+After using ANOVA test, we can see that there is a large difference in mean of monthly incomes between 5 job levels. Next, we continue to use ANOVA to check whether in the Job Level 5, there is any difference in monthly incomes between 3 departments.\
+
+Hypothesis testing at a 10% significance level ($\alpha$ = 0.1):
+
+$$
+H_o: \mu_1 = \mu_2 = \mu_3 \textit{  versus  } H_a: \textit{at least one pair of means are different from each other}\\
+$$
+
+$\mu_1 : \textit{the mean of employee's monthly income with Job Level 5 in Sales department}\\$ 
+$\mu_2 : \textit{the mean of employee's monthly income with Job Level 5 in Human Resources department} \\$ 
+$\mu_3 : \textit{the mean of employee's monthly income with Job Level 5 in Research and Development } \\$
+
+```{r echo=FALSE, message=FALSE,fig.align='center', out.width='50%',warning=FALSE}
+Hypothesis3 <-filter(dt, JobLevel == "5")
+Hypothesis3 <- data.frame(MonthlyIncome=Hypothesis3$MonthlyIncome, 
+  Department=Hypothesis3$Department)
+
+#draw boxplot 
+boxplot(MonthlyIncome ~ Department, data = Hypothesis3,
+        col = "#E389B9", border = "#746AB0",
+        xlab = "Job Level", ylab = "Monthly Income",
+        main = "Distribution of Monthly Income by Job Level 5 for each Department")
+```
+
+Based on the boxplot, it can be observed that the means of monthly incomes in three departments with the same job level e are nearly identical.\
+
+We use the R to compute calculations. The code is as follows:
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+# Perform the ANOVA of department
+Hypothesis3 <-filter(dt, JobLevel == "5")
+Hypothesis3 <- data.frame(MonthlyIncome=Hypothesis3$MonthlyIncome, 
+  Department=Hypothesis3$Department)
+tryCatch({
+Model_1 <- aov(MonthlyIncome ~ Department, data = Hypothesis3)
+Sum_table <- summary(Model_1)
+}, error = function(e) {
+  print(paste("An error occurred: ", e$message))
+})
+
+Modl_table_1 <- data.frame(Sum_table[[1]])
+colnames(Modl_table_1) <- c("Degrees_of_freedom", "Sum_of_Squares", 
+                          "Mean_square", "F_statistic", "P_Value")
+knitr::kable(Modl_table_1)
+```
+
+From the table, we have:
+
+F-statistic:
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=TRUE}
+print(Modl_table_1[1, 4])
+```
+
+p_value:
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=TRUE}
+print(Modl_table_1[1,5])
+```
+
+Since 
+$$\textit{p_value } =  0.7220879 > 0.1$$
+
+the null hypothesis is accepted at the 10% significance level. Thus, we do not have enough evidence to reject the null hypothesis. It means we can accept that the monthly incomes between 3 departments in a job level is the same.
+
+### **2.2 Performance (t-test)** {.tabset}
+In this part, our team uses the 2-sample t-test technique to compare employees' monthly with two different performance ratings. We aim to test whether the average monthly incomes of employees do not depend on the performance rating.\
+
+#### T-test method {.tabset .tabset-fade .tabset-pills}
+
+We develop the following testing hypothesis:  
+$$
+H_o: \mu_\text{A} - \mu_\text{B} = \delta  \textit{  versus  } H_a:\mu_\text{A} -\mu_\text{B}\neq  \delta 
+$$
+for some fixed value $\delta$ of interest (usually  $\delta = 0$),
+
+A size hypothesis test accepts the null hypothesis if p-value $\geq \alpha$ and rejects the null hypothesis if p-value $< \alpha$ 
+
+##### Summary statistic
+
+| | Sample Size| Sample Mean | Standard deviation |
+|----------|:----------:|:----------:|:----------:|
+| A| n |$\overline{x}$ | $s_x$ |
+| B| m | $\overline{y}$  |$s_y$|
+
+##### The formulas
+
+<span style="color: #009ACD;"> The variance:</span>
+
+$$
+s^2= \frac{\sum_{i=1}^n {(x_i-\overline{x})}^2}{n-1}
+$$
+
+<span style="color: #009ACD;"> Standard error:</span>
+
+$$
+s.e.( \overline{ x } -\overline{ y } )=  \sqrt{ \frac{{s_x}^2 }{n}+\frac{{s_y}^2 }{m}}
+$$
+<span style="color: #009ACD;"> The degrees of freedom:</span>
+
+$$
+ \upsilon =\frac{{( \frac{{s_x}^2 }{n}+\frac{{s_y}^2 }{m}) }^2}{{ \frac{{s_x}^4 }{n^2(n-1)}+\frac{{s_y}^4 }{m^2(m-1)} }}
+$$
+
+<span style="color: #009ACD;"> t-statistic:</span>
+
+$$
+t=\frac{\overline{ x } -\overline{ y }-\delta}{{ \frac{{s_x}^2 }{n}+\frac{{s_y}^2 }{m} }}
+$$
+<span style="color: #009ACD;">p_value:</span>
+
+$$
+\textit{p_value}= 2 \times P(t_{ \upsilon}\geq |t|)
+$$
+
+#### Analysis
+The table of Summary statistics for analysis of two independent samples:
+```{r H3 TABLE, echo=TRUE, message=FALSE, warning=FALSE}
+R3 <- filter(Data, PerformanceRating == "3")
+R4 <- filter(Data, PerformanceRating == "4")
+t_test_df <- data.frame(
+ PerformanceRating = c(3, 4),
+  Sample_size = c(nrow(R3), nrow(R4)),
+  Sample_mean = c(mean(R3$MonthlyIncome), mean(R4$MonthlyIncome)),
+  Sample_standard_deviation = c(sd(R3$MonthlyIncome), sd(R4$MonthlyIncome))
+)
+knitr::kable(t_test_df)
+
+```
+
+One side hypothesis testing at $\alpha = 0.1$
+$$
+H_o: \mu_\text{r3} = \mu_\text{r4} \textit{  versus  } H_a:\mu_\text{r3}  \neq   \mu_\text{r4}
+$$
+
+$\mu_\text{r3} : \textit{the mean of employee's monthly whose performance rating is 3} \\$
+$\mu_\text{r4} : \textit{the mean of employee's monthly whose performance rating is 4} \\$
+
+The code for the 2-sample t-test is as follows:
+
+```{r H3 t test, echo=TRUE}
+combined_data_z <-rbind(R3,R4)
+ttest1 <-t.test(MonthlyIncome ~ PerformanceRating, data = combined_data_z,conf.level = 0.9,
+               var.equal = FALSE, alternative = "two.sided")
+ttest1
+```
+
+Since
+
+$$
+\text{p_value} =  0.5017 > 0.1, 
+$$
+we do not have enough evidence to believe the mean of monthly incomes between the 2 performance ratings are different. It means that the statement the means of monthly incomes between 2 performance ratings are the same can be accepted. 
+
+### **2.3 Job Involvement (ANOVA)**
+In this part, our team will continue to use the ANOVA technique to test the means of monthly incomes between 4 levels of Job Involvement.\
+
+Hypothesis testing at a 10% significance level ( = 0.1):
+$$
+H_o: \mu_1 = \mu_2 = \mu_3 = \mu_4  \textit{  versus  } H_a: \textit{at least one pair of means are different from each other}\\
+$$
+$\mu_1 : \textit{the mean of employee's monthly income of Employees with Job Involvement 1}\\$ 
+$\mu_2 : \textit{the mean of employee's monthly income of Employees with Job Involvement 2} \\$ 
+$\mu_3 : \textit{the mean of employee's monthly income of Employees with JobInvolvement 3} \\$
+$\mu_4 : \textit{the mean of employee's monthly income of Employees with Job Involvement 4 } \\$ 
+
+The boxplot grouped by the Education Level  is generated :
+```{r echo=FALSE, fig.align='center', message=FALSE, warning=FALSE, out.width='50%'}
+# Fit the ANOVA model(the one-factor analysis of variances technique)
+Hypothesis4 <- data.frame(JobInvolvement = dt$JobInvolvement, 
+                          Income = dt$MonthlyIncome)
+
+Hypothesis4$JobInvolvement <- as.character(Hypothesis4$JobInvolvement)
+
+#Draw the boxplot
+boxplot(Income ~ JobInvolvement, data = Hypothesis4,
+        col = "#E389B9", border = "#746AB0",
+        xlab = "Job Involvement", ylab = "Monthly Income",
+        main = "Distribution of Monthly Income by Job Involvement")
+
+```
+
+It is cleared that there is no significant difference in the means of monthly incomes between 4 levels of Job Involvement.\
+
+
+We use R, a programming language, to compute calculations. The code is as follows: 
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+# Perform the ANOVA
+Hypothesis4 <- data.frame(JobInvolvement = dt$JobInvolvement, 
+                          Income = dt$MonthlyIncome)
+
+Hypothesis4$JobInvolvement <- as.character(Hypothesis4$JobInvolvement)
+tryCatch({
+  Model1 <- aov(Income ~ JobInvolvement, data = Hypothesis4)
+  # Generate the summary table
+  Summary_table <- summary(Model1)
+ 
+}, error = function(e) {
+  print(paste("An error occurred: ", e$message))
+})
+# Convert the summary to a data frame
+Modl_table1 <- data.frame(Summary_table[[1]])
+colnames(Modl_table1) <- c("Degrees_of_freedom", "Sum_of_Squares", 
+                          "Mean_square", "F_statistic", "P_Value")
+knitr::kable(Modl_table1)
+```
+
+From the table, we have:
+
+F-statistic:
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=TRUE}
+print(Modl_table1[1, 4])
+```
+
+p_value:
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=TRUE}
+print(Modl_table1[1,5])
+```
+
+Since $\textit{p_value } = 0.74127 > 0.1$, the null hypothesis is accepted at the 10% significance level. We do not have enough evidence to believe the mean of monthly incomes between the 4 job involvements are different. It means that the statement the means of monthly incomes between the 4 job involvements are the same can be accepted. 
+
+
+
+### **2.4 Education Level (ANOVA)**{.tabset}
+
+Similarly 2.1, in this part, our team will test whether the monthly incomes between education levels are different or not. If they are not the same, we will continued to test the monthly incomes between 3 departments in the same Education Level. 
+
+#### Between education levels
+
+To compare monthly incomes based on education levels, we apply the same method as part 1.
+
+Hypothesis testing at a 1% significance level ($\alpha$ = 0.01):
+$$
+H_o: \mu_1 = \mu_2 = \mu_3 = \mu_4 =\mu_5 \textit{  versus  } H_a: \textit{at least one pair of means are different from each other}\\
+$$
+
+$\mu_1 : \textit{the mean of employee's monthly income of Employees with Education Level 1}\\$ 
+$\mu_2 : \textit{the mean of employee's monthly income of Employees with Education Level 2} \\$ 
+$\mu_3 : \textit{the mean of employee's monthly income of Employees with Education Level 3} \\$
+$\mu_4 : \textit{the mean of employee's monthly income of Employees with Education Level 4 } \\$ $\mu_5 : \textit{the mean of employee's monthly income of Employees with Education Level 5} \\$
+
+The boxplot distribute the monthly income of each education level are generated:
+
+```{r echo=FALSE, fig.align='center', message=FALSE, warning=FALSE, out.width='50%'}
+hypothesis_education <- data.frame(Education=data$Education,
+                          MonthlyIncome=data$MonthlyIncome)
+hypothesis_education$Education <- as.character(hypothesis_education$Education)
+#Draw the boxplot
+boxplot(MonthlyIncome ~ Education, data = hypothesis_education,
+        col = "skyblue", border = "darkblue",
+        xlab = "Education Level", ylab = "Monthly Income",
+        main = "Distribution of Monthly Income by Education Level")
+
+```
+It is cleared that when the education level is higher, the monthly salary increases.
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+# Fit the ANOVA model(the one-factor analysis of variances technique)
+hypothesis_education <- data.frame(Education=data$Education,
+                          MonthlyIncome=data$MonthlyIncome)
+hypothesis_education$Education <- as.character(hypothesis_education$Education)
+model_education <- aov(MonthlyIncome ~ Education, data = hypothesis_education)
+#Construct to table
+summary_table_education <- summary(model_education)
+anova_df_edu <- data.frame(
+  Source = rownames(summary_table_education[[1]]),
+  Degrees_of_freedom = summary_table_education[[1]][, "Df"],
+  Sum_of_Squares = summary_table_education[[1]][, "Sum Sq"],
+  Mean_square = summary_table_education[[1]][, "Mean Sq"],
+  F_statistic= summary_table_education[[1]][, "F value"],
+  P_Value = summary_table_education[[1]][, "Pr(>F)"]
+)
+
+knitr::kable(anova_df_edu)
+```
+From the table, we have:
+
+F-statistic:
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=TRUE}
+ anova_df_edu[1, 5]
+```
+
+p_value:
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=TRUE}
+ anova_df_edu[1, 6]
+```
+Since $\textit{p_value } = 0.005096654 < 0.01$, the null hypothesis is rejected at the 1% significance level. Thus, there is sufficient evidence that at least the monthly incomes of one pair education levels are different.
+
+
+We additionally perform the Tukey multiple comparison procedure to identify any differences among means values and quantify the extent of those differences. The R code for this procedure is as follows:
+
+```{r echo=TRUE}
+results_edu <- TukeyHSD(model_education,conf.level=.99)
+# Extract results to a data frame
+
+tukey_df_edu <- as.data.frame(results_edu$Education)
+tukey_df_edu$CI_low <- results_edu$lower[, "lwr"]
+tukey_df_edu$CI_high <- results_edu$upper[, "upr"]
+
+# View the data frame
+knitr::kable(tukey_df_edu)
+```
+
+
+```{r plot 2.4, echo=FALSE,results='hide' ,fig.align='right', message=FALSE, warning=FALSE, out.width='100%'}
+plot(results_edu, las =1, col = "blue")+title(sub="Plot 2.4")
+```
+
+The 99% confidence interval for the difference between 5 and 1: 
+$$
+\mu_5 -\mu_1  \in (81.96362,5067.293)
+$$
+Since the only confidence interval does not contain 0, we can conclude that Education level 5 and level 1 have differences in means of monthly incomes with 99% confidence interval. In addition, the 99% confidence interval is positive, we can conclude that the mean of monthly incomes in Education Level 5 is larger than in Education Level 1.
+
+Beside that, the rest 99% confidence intervals contain 0, but they are likely to be positive, so we can accept that with the higher education level, the employees have the higher monthly income.
+
+
+#### Department in education 5
+
+After using ANOVA test, we can see that there is a large difference in mean of monthly incomes between 5 education levels. Next, we continue to use ANOVA to check whether in the Education Level 5, there is any difference in monthly incomes between 3 departments.\
+
+$$
+H_o: \mu_1 = \mu_2 = \mu_3 \textit{  versus  } H_a: \textit{at least one pair of means are different from each other}\\
+$$
+
+$\mu_1 : \textit{the mean of employee's monthly income with Education Level 5 in Sales}\\$
+$\mu_2 : \textit{the mean of employee's monthly income with Education Level 5 in Human Resources} \\$
+$\mu_3 : \textit{the mean of employee's monthly income with Education Level 5 in Research and Development} \\$
+
+```{r echo=FALSE, message=FALSE,fig.align='center', out.width='50%',warning=FALSE}
+data_now <-filter(Data, Education == "5")
+hypothesis_education5_department <- data.frame(
+                          MonthlyIncome=data_now$MonthlyIncome, 
+                          Department=data_now$Department)
+#Draw the boxplot
+boxplot(MonthlyIncome ~ Department, data = hypothesis_education5_department,
+        col = "skyblue", border = "darkblue",
+        xlab = "Department", ylab = "Monthly Income",
+        main = "Distribution of Monthly Income by Education Level 5 for each Department")
+
+```
+We use the R to compute calculations. The code is as follows:
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+# Fit the ANOVA model(the one-factor analysis of variances technique)
+model_education5_department <- aov(MonthlyIncome ~ Department, data = hypothesis_education5_department) 
+#Construct to table 
+summary_table_education5_dpm <- summary(model_education5_department) 
+anova_df_edu5_dpm <- data.frame( 
+  Source = rownames(summary_table_education5_dpm[[1]]), 
+  Degrees_of_freedom = summary_table_education5_dpm[[1]][, "Df"], 
+  Sum_of_Squares = summary_table_education5_dpm[[1]][, "Sum Sq"], 
+  Mean_square = summary_table_education5_dpm[[1]][, "Mean Sq"], 
+  F_statistic= summary_table_education5_dpm[[1]][, "F value"], 
+  P_Value = summary_table_education5_dpm[[1]][, "Pr(>F)"] )
+
+knitr::kable(anova_df_edu5_dpm)
+```
+
+From the table, we have:
+
+F-statistic:
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=TRUE}
+ anova_df_edu5_dpm[1, 5]
+```
+
+p_value:
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=TRUE}
+ anova_df_edu5_dpm[1, 6]
+```
+$\text{Since } \textit{p_value } = 0.4933808 > 0.1 \text{, the null hypothesis is accepted at the 10% significance level.  }$ 
+Thus, we do not have enough evidence to reject the null hypothesis. It means we can accept that the monthly incomes between 3 departments in a education level is the same.
+
+### **2.5 Conclusion**
+
+In conclusion, after we test on all 4 factors, we can conclude that the Performance and Job Involvement do not affect the monthly income. Meanwhile, the monthly income is strongly affected by the Job Level and Education Level. More specifically,  in the same education or job level, all the 3 departments have the nearly same amount of average income.
+
+
+## **3. Satisfaction (proportion)**
+### **3.1 Method** {.tabset .tabset-fade .tabset-pills}
+Our team uses the comparing two population proportions technique to compare the satisfaction between 2 genders. We aim to test whether the satisfaction do not depend on gender. As a result, we develop the following testing hypothesis:  
+$$
+H_o: p_\text{A} = p_\text{B}   \textit{  versus  } H_a:p_\text{A} \neq p_\text{B}  
+$$
+
+A size hypothesis test accepts the null hypothesis if p-value $\geq \alpha$ and rejects the null hypothesis if p-value $< \alpha$ 
+
+#### Summary statistic
+X and Y are two random variable:
+$$
+X\sim B(n,p_A)
+$$
+$$
+Y\sim B(m,p_B)
+$$
+The unbiased point estimates of the two population proportions are
+$$
+ \widehat{p_A} =\frac{x}{n} \text{  and  } \widehat{p_B} =\frac{y}{m}
+$$
+
+#### The formulas
+
+<span style="color: #009ACD;"> The pooled estimate:</span>
+
+$$
+\widehat{p} = \frac{x+y}{n+m}
+$$
+
+<span style="color: #009ACD;"> Z-statistic:</span>
+
+$$
+z=\frac{\widehat{p_a}-\widehat{p_B}}{\sqrt{\widehat{p}\times(1-\widehat{p})\times(\frac{1}{n}+\frac{1}{m})}}
+$$
+<span style="color: #009ACD;">p_value:</span>
+$$
+\text{p_value} = 2\times \Phi (-|z|)
+$$
+
+<span style="color: #009ACD;">$1-\alpha \text{ }$ confidence interval:</span>
+$$
+p_A -p_B \in (\widehat{p_a}-\widehat{p_B}-z_\frac{\alpha}{2}\times\sqrt{\frac{x(n-x)}{n^3}+\frac{y(m-y)}{m^3}},\widehat{p_a}-\widehat{p_B}+z_\frac{\alpha}{2}\times\sqrt{\frac{x(n-x)}{n^3}+\frac{y(m-y)}{m^3}})
+$$
+
+### **3.2 Analysis**
+Hypothesis testing at a 10% significance level (α = 0.1):
+
+$$
+H_o: p_1 = p_2 \textit{  versus  } H_a: p_1 \neq\ p_2
+$$
+$p_1 : \textit{The proportion of satisfied females}\\$
+
+$p_2 : \textit{The proportion of satisfied males} \\$
+
+```{r echo=TRUE, fig.align='center', message=FALSE, warning=FALSE, out.width='70%'}
+pr_df <- table(data$Gender, data$Satisfied_in_job)
+knitr::kable(pr_df)
+```
+```{r echo=TRUE}
+prop_test_result <- prop.test(pr_df[, 2], n = rowSums(pr_df),conf.level=.90)
+print(prop_test_result)
+```
+
+Since the $\textit{p_value } =  0.3903 > 0.1$ (greater than the common significance level of 10%), there is not enough evidence to suggest a significant difference in job satisfaction proportions between the two genders.
+
+The 90% confidence interval ( -0.06767004,  0.02041072 ) includes zero, indicating that the true difference in proportions could be zero (no difference). This is consistent with the interpretation from the p-value.
+
+
+
+### **3.3 Conclusion**
+
+The results did not provide sufficient evidence to either reject or accept the null hypothesis. The  p-value obtained was 0.3903, indicating a lack of statistical significance. Additionally, the 90% confidence interval for the difference in proportions included zero, further emphasizing the uncertainty in our findings. Therefore, we cannot conclusively determine whether there is a meaningful difference in job satisfaction between the two genders based on the available data. The satisfaction in the job and gender are independent of each other. 
+
+
+# **IV. CONCLUSION**
+
+After all the analysis, we can see clearly that the average incomes per month of all three departments are not the same and the budget salary of this company is concentrated in the Sales department. This will encourage the Sales department to work more effectively to generate real revenue for the company. Moreover, based on the fact that job satisfaction between both genders is the same, we can conclude that the company does not discriminate between men and women.These are two good points that the company needs to continue to promote. However, the factors that have strong impacts on this are the Education Level and Job Level, while the Performance and the Job Involvement are not seriously considered enough. We believe that this is a problem in the company that we should seriously consider, because the Performance and the Job Involvement are the two factors that can affect the quality of work in the long term instead of just paid employees based on their education level. 
+
+# **V. APPENDIX**
+```{r print the data set at the appix,echo=FALSE, message=FALSE, warning=FALSE}
+datatable(Data, options = list(
+  pageLength = 200,  # Number of rows per page
+  scrollX = TRUE  # Enable horizontal scrollbar
+    # Set vertical scrollbar height
+) , rownames = FALSE ) 
+ 
+
+```
+

@@ -1,0 +1,34 @@
+/* styles.css */
+
+/* Chỉnh màu cho mục lục */
+#TOC {
+  color: /#0096c7 ;
+  font-size: 17px;
+  text-align: left  
+}
+
+body {
+    font-family: 'Time New Roman', serif;
+    font-size: 18px;
+    line-height: 1.5;
+    color: #000000;
+}
+
+h3, h4, h5, h6 {
+    font-family: 'Time New Roman', serif;
+    
+}
+h2 {
+   font-family: 'Time New Roman', serif;
+   color: #1282A2;
+   
+ }   
+h1 {
+   font-family: 'Time New Roman', serif;
+   color: #25A18E ; /*#0077B6*/
+ }   
+/* Căn giữa công thức toán */
+.math {
+    font-size:  17px;
+    text-align: center;
+}
